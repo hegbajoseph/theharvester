@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}theHarvester // OSINT{% endblock %}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+
+    :root {
+      --bg-primary:   #090d13;
+      --bg-secondary: #0e1520;
+      --bg-card:      #111827;
+      --bg-hover:     #1a2332;
+      --border:       #1e2d40;
+      --border-glow:  #0a3d5c;
+      --cyan:         #00d4ff;
+      --cyan-dim:     #0099bb;
+      --green:        #00ff88;
+      --green-dim:    #00bb66;
+      --yellow:       #ffd700;
+      --red:          #ff4060;
+      --purple:       #b060ff;
+      --text-primary: #e0eaf5;
+      --text-muted:   #4a6070;
+      --text-dim:     #2a3a4a;
+      --font-mono:    'Share Tech Mono', monospace;
+      --font-ui:      'Rajdhani', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      min-height: 100vh;
+      background-image:
+        linear-gradient(rgba(0, 212, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ── NAVBAR ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 32px;
+      height: 52px;
+      background: rgba(9, 13, 19, 0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-brand {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      letter-spacing: 2px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-brand .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--green); }
+      50%       { opacity: 0.5; box-shadow: 0 0 4px var(--green); }
+    }
+    .nav-brand .brand-name { color: var(--cyan); font-weight: bold; }
+    .nav-brand .brand-sep  { color: var(--text-muted); margin: 0 4px; }
+    .nav-brand .brand-type { color: var(--text-muted); }
+
+    .nav-links { display: flex; gap: 4px; }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 6px 14px;
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .nav-links a:hover {
+      color: var(--cyan);
+      border-color: var(--border-glow);
+      background: rgba(0, 212, 255, 0.05);
+    }
+    .nav-links a.active {
+      color: var(--cyan);
+      border-color: var(--cyan);
+      background: rgba(0, 212, 255, 0.08);
+    }
+
+    /* ── MAIN ── */
+    .main-content {
+      padding: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-family: var(--font-ui);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::before {
+      content: '//';
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, var(--border-glow), transparent);
+      margin-left: 10px;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .card.card-cyan::before   { background: var(--cyan); }
+    .card.card-green::before  { background: var(--green); }
+    .card.card-yellow::before { background: var(--yellow); }
+    .card.card-red::before    { background: var(--red); }
+
+    /* ── STAT CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 20px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .stat-card.s-cyan::before   { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+    .stat-card.s-green::before  { background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .stat-card.s-yellow::before { background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+    .stat-card.s-red::before    { background: var(--red); box-shadow: 0 0 10px var(--red); }
+
+    .stat-label {
+      font-family: var(--font-ui);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 36px;
+      font-weight: bold;
+      line-height: 1;
+    }
+    .stat-card.s-cyan   .stat-value { color: var(--cyan);   text-shadow: 0 0 20px var(--cyan); }
+    .stat-card.s-green  .stat-value { color: var(--green);  text-shadow: 0 0 20px var(--green); }
+    .stat-card.s-yellow .stat-value { color: var(--yellow); text-shadow: 0 0 20px var(--yellow); }
+    .stat-card.s-red    .stat-value { color: var(--red);    text-shadow: 0 0 20px var(--red); }
+
+    /* ── TABLE ── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--cyan);
+      font-family: var(--font-ui);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      text-align: left;
+      background: var(--bg-secondary);
+    }
+    .data-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    .data-table tr:hover td {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    .data-table .domain-cell {
+      color: var(--text-primary);
+      font-weight: bold;
+    }
+
+    /* ── STATUS BADGES ── */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      font-family: var(--font-ui);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid;
+    }
+    .badge-completed { color: var(--green);  border-color: var(--green-dim);  background: rgba(0,255,136,0.08); }
+    .badge-running   { color: var(--yellow); border-color: #996600;           background: rgba(255,215,0,0.08);  }
+    .badge-failed    { color: var(--red);    border-color: #993040;           background: rgba(255,64,96,0.08);  }
+    .badge-pending   { color: var(--text-muted); border-color: var(--border); background: transparent; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-block;
+      padding: 8px 18px;
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: 1px solid;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      background: transparent;
+    }
+    .btn-cyan {
+      color: var(--cyan); border-color: var(--cyan);
+    }
+    .btn-cyan:hover {
+      background: var(--cyan); color: var(--bg-primary);
+      box-shadow: 0 0 20px rgba(0,212,255,0.4);
+    }
+    .btn-red {
+      color: var(--red); border-color: var(--red);
+    }
+    .btn-red:hover {
+      background: var(--red); color: #fff;
+    }
+    .btn-muted {
+      color: var(--text-muted); border-color: var(--border);
+    }
+    .btn-muted:hover {
+      color: var(--text-primary); border-color: var(--text-muted);
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state .empty-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      opacity: 0.3;
+    }
+    .empty-state p { font-size: 13px; }
+    .empty-state .empty-hint {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    /* ── ALERTS / MESSAGES ── */
+    .messages-container { margin-bottom: 20px; }
+    .alert {
+      padding: 10px 16px;
+      border-left: 3px solid;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .alert-success { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.05); }
+    .alert-error   { border-color: var(--red);   color: var(--red);   background: rgba(255,64,96,0.05); }
+    .alert-info    { border-color: var(--cyan);  color: var(--cyan);  background: rgba(0,212,255,0.05); }
+
+    /* ── LINK ── */
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { color: var(--text-primary); }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--border); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan-dim); }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="dot"></div>
+    <span class="brand-name">theHarvester</span>
+    <span class="brand-sep">//</span>
+    <span class="brand-type">OSINT</span>
+  </div>
+  <div class="nav-links">
+    <a href="{% url 'dashboard' %}"
+       class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      Dashboard
+    </a>
+    <a href="{% url 'scans_list' %}"
+       class="{% if request.resolver_match.url_name == 'scans_list' %}active{% endif %}">
+      Scans
+    </a>
+    <a href="/admin/">Admin</a>
+  </div>
+</nav>
+
+<div class="main-content">
+  {% if messages %}
+    <div class="messages-container">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% block content %}{% endblock %}
+</div>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

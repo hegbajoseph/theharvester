@@ -1,0 +1,48 @@
+{% extends "my_app/base.html" %}
+
+{% block title %}Supprimer — {{ session.domain }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .confirm-box {
+    max-width: 480px;
+    margin: 60px auto;
+    background: var(--bg-card);
+    border: 1px solid #993040;
+    padding: 36px;
+  }
+  .confirm-icon { font-size: 28px; color: var(--red); margin-bottom: 16px; }
+  .confirm-title {
+    font-family: var(--font-ui);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--red);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .confirm-msg { color: var(--text-muted); font-size: 13px; line-height: 1.7; margin-bottom: 28px; }
+  .confirm-domain { color: var(--cyan); }
+  .confirm-actions { display: flex; gap: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="confirm-box">
+  <div class="confirm-icon">⚠</div>
+  <div class="confirm-title">// Confirmer suppression</div>
+  <p class="confirm-msg">
+    Vous êtes sur le point de supprimer le scan de
+    <span class="confirm-domain">{{ session.domain }}</span>.<br>
+    Cette action est <strong style="color:var(--red)">irréversible</strong> et supprimera
+    tous les résultats associés.
+  </p>
+  <div class="confirm-actions">
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-red">✖ Supprimer définitivement</button>
+    </form>
+    <a href="{% url 'scans_list' %}" class="btn btn-muted">Annuler</a>
+  </div>
+</div>
+{% endblock %}

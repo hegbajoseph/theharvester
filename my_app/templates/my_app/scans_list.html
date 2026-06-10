@@ -1,0 +1,180 @@
+{% extends "my_app/base.html" %}
+
+{% block title %}Scans — theHarvester{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .table-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 0;
+    overflow: hidden;
+  }
+  .table-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .count-badge {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: var(--font-ui);
+    letter-spacing: 1px;
+  }
+  .table-wrap { overflow-x: auto; }
+
+  .data-table .actions { display: flex; gap: 8px; }
+  .data-table .sources-cell {
+    font-size: 11px;
+    color: var(--text-dim);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .data-table .id-cell {
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+
+  /* confirm delete modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(9,13,19,0.85);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 32px;
+    min-width: 360px;
+  }
+  .modal-title {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--red);
+    margin-bottom: 12px;
+  }
+  .modal-msg { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }
+  .modal-actions { display: flex; gap: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2 class="section-title" style="margin-bottom:0;">Tous les Scans</h2>
+  <a href="{% url 'dashboard' %}" class="btn btn-muted">← Dashboard</a>
+</div>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <span style="color:var(--text-muted); font-family:var(--font-ui); font-size:11px; letter-spacing:1px;">
+      HISTORIQUE COMPLET
+    </span>
+    <span class="count-badge">{{ sessions.count }} scan{{ sessions.count|pluralize }}</span>
+  </div>
+
+  {% if sessions %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Domaine</th>
+          <th>Statut</th>
+          <th>Sources</th>
+          <th>Limite</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sessions %}
+        <tr>
+          <td class="id-cell">#{{ s.id }}</td>
+          <td class="domain-cell">{{ s.domain }}</td>
+          <td><span class="badge badge-{{ s.status }}">{{ s.status }}</span></td>
+          <td class="sources-cell" title="{{ s.sources }}">{{ s.sources }}</td>
+          <td style="color:var(--text-dim);">{{ s.limit }}</td>
+          <td style="color:var(--text-dim); font-size:11px;">{{ s.created_at|date:"d/m/Y H:i" }}</td>
+          <td>
+            <div class="actions">
+              {% if s.status == 'completed' %}
+              <a href="{% url 'scan_results' s.id %}" class="btn btn-cyan" style="padding:4px 10px;font-size:10px;">
+                Résultats
+              </a>
+              {% endif %}
+              <button class="btn btn-red"
+                      style="padding:4px 10px;font-size:10px;"
+                      onclick="confirmDelete({{ s.id }}, '{{ s.domain }}')">
+                Suppr.
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">◉</div>
+    <p>Aucun scan effectué.</p>
+    <p class="empty-hint">
+      <a href="{% url 'dashboard' %}">Lancez votre premier scan →</a>
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal-box">
+    <div class="modal-title">// CONFIRMER SUPPRESSION</div>
+    <p class="modal-msg" id="modal-msg">Supprimer ce scan ?</p>
+    <div class="modal-actions">
+      <form id="delete-form" method="post" action="">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-red">Supprimer</button>
+      </form>
+      <button class="btn btn-muted" onclick="closeModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function confirmDelete(id, domain) {
+    document.getElementById('modal-msg').textContent =
+      `Supprimer le scan de "${domain}" ? Cette action est irréversible.`;
+    document.getElementById('delete-form').action = `/scans/${id}/delete/`;
+    document.getElementById('delete-modal').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('delete-modal').classList.remove('open');
+  }
+  document.getElementById('delete-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+</script>
+{% endblock %}

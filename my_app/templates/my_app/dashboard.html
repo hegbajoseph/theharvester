@@ -1,0 +1,425 @@
+{% extends "my_app/base.html" %}
+
+{% block title %}Dashboard — theHarvester{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* ── SCAN FORM ── */
+  .scan-form-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 28px;
+  }
+
+  .form-group { margin-bottom: 20px; }
+  .form-label {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .form-input {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 1px rgba(0,212,255,0.2);
+  }
+  .form-input::placeholder { color: var(--text-dim); }
+
+  /* sources toolbar */
+  .sources-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .sources-toolbar button {
+    padding: 5px 12px;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sources-toolbar button:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  /* checkboxes grid */
+  .sources-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+  }
+  .source-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 0;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: color 0.15s;
+  }
+  .source-item:hover { color: var(--text-primary); }
+  .source-item input[type="checkbox"] {
+    appearance: none;
+    width: 14px; height: 14px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .source-item input[type="checkbox"]:checked {
+    background: var(--cyan);
+    border-color: var(--cyan);
+  }
+  .source-item input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: -2px; left: 2px;
+    font-size: 10px;
+    color: var(--bg-primary);
+    font-weight: bold;
+  }
+  .source-item input[type="checkbox"]:checked + span {
+    color: var(--cyan);
+  }
+
+  .limit-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .limit-row .form-label { margin-bottom: 0; }
+  .form-input-sm {
+    width: 100px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+  }
+  .form-input-sm:focus { border-color: var(--cyan); }
+
+  .btn-launch {
+    width: 100%;
+    padding: 12px;
+    background: var(--cyan);
+    color: var(--bg-primary);
+    border: none;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-launch:hover {
+    box-shadow: 0 0 30px rgba(0,212,255,0.5);
+    background: #00eeff;
+  }
+  .btn-launch:active { transform: scale(0.99); }
+  .btn-launch:disabled {
+    background: var(--border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* ── RECENT SCANS PANEL ── */
+  .recent-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 28px;
+  }
+  .recent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  /* ── SCAN PROGRESS ── */
+  .scan-progress {
+    display: none;
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-glow);
+  }
+  .progress-domain {
+    color: var(--cyan);
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .progress-bar-wrap {
+    height: 3px;
+    background: var(--bg-hover);
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--cyan);
+    width: 0%;
+    transition: width 0.5s;
+    animation: scan-progress 3s ease-in-out infinite;
+  }
+  @keyframes scan-progress {
+    0%   { width: 10%; margin-left: 0; }
+    50%  { width: 60%; margin-left: 20%; }
+    100% { width: 10%; margin-left: 80%; }
+  }
+  .progress-status {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- STATS -->
+<div class="stats-grid">
+  <div class="stat-card s-cyan">
+    <div class="stat-label">Total Scans</div>
+    <div class="stat-value">{{ stats.total_scans }}</div>
+  </div>
+  <div class="stat-card s-green">
+    <div class="stat-label">Terminés</div>
+    <div class="stat-value">{{ stats.completed_scans }}</div>
+  </div>
+  <div class="stat-card s-yellow">
+    <div class="stat-label">En Cours</div>
+    <div class="stat-value">{{ stats.running_scans }}</div>
+  </div>
+  <div class="stat-card s-red">
+    <div class="stat-label">Échoués</div>
+    <div class="stat-value">{{ stats.failed_scans }}</div>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="dashboard-grid">
+
+  <!-- NOUVEAU SCAN -->
+  <div class="scan-form-card">
+    <h2 class="section-title">Nouveau Scan</h2>
+
+    <div class="form-group">
+      <label class="form-label">Domaine Cible</label>
+      <input type="text" id="domain-input" class="form-input"
+             placeholder="example.com" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Sources</label>
+      <div class="sources-toolbar">
+        <button onclick="selectAll()">Tout séléct.</button>
+        <button onclick="clearAll()">Effacer</button>
+        <button onclick="setDefault()">Défaut</button>
+      </div>
+      <div class="sources-grid" id="sources-grid">
+        {% for source in sources %}
+        <label class="source-item">
+          <input type="checkbox" name="source" value="{{ source }}"
+            {% if source in 'bing,dnsdumpster,google,hunter,crtsh,securityTrails,shodan' %}checked{% endif %}>
+          <span>{{ source }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="limit-row">
+      <label class="form-label">Limite résultats</label>
+      <input type="number" id="limit-input" class="form-input-sm" value="500" min="10" max="5000">
+    </div>
+
+    <button class="btn-launch" id="launch-btn" onclick="launchScan()">
+      ▶ LANCER LE SCAN
+    </button>
+
+    <div class="scan-progress" id="scan-progress">
+      <div class="progress-domain" id="progress-domain"></div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <div class="progress-status" id="progress-status">Initialisation...</div>
+    </div>
+  </div>
+
+  <!-- SCANS RÉCENTS -->
+  <div class="recent-card">
+    <div class="recent-header">
+      <h2 class="section-title" style="margin-bottom:0;">Scans Récents</h2>
+      <a href="{% url 'scans_list' %}" class="btn btn-muted">Voir tout →</a>
+    </div>
+
+    {% if sessions %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Domaine</th>
+          <th>Statut</th>
+          <th>Sources</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sessions %}
+        <tr>
+          <td class="domain-cell">{{ s.domain }}</td>
+          <td><span class="badge badge-{{ s.status }}">{{ s.status }}</span></td>
+          <td style="color:var(--text-dim); font-size:11px;">
+            {{ s.sources|truncatechars:30 }}
+          </td>
+          <td style="color:var(--text-dim); font-size:11px;">
+            {{ s.created_at|date:"d/m/y H:i" }}
+          </td>
+          <td>
+            <a href="{% url 'scan_results' s.id %}" class="btn btn-cyan" style="padding:4px 10px;font-size:10px;">
+              Voir
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">◉</div>
+      <p>Aucun scan effectué.</p>
+      <p class="empty-hint">Lancez votre premier scan →</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const DEFAULT_SOURCES = ['bing','dnsdumpster','google','hunter','crtsh','securityTrails','shodan'];
+
+  function selectAll() {
+    document.querySelectorAll('#sources-grid input[type=checkbox]').forEach(c => c.checked = true);
+  }
+  function clearAll() {
+    document.querySelectorAll('#sources-grid input[type=checkbox]').forEach(c => c.checked = false);
+  }
+  function setDefault() {
+    clearAll();
+    DEFAULT_SOURCES.forEach(s => {
+      const el = document.querySelector(`input[value="${s}"]`);
+      if (el) el.checked = true;
+    });
+  }
+
+  function launchScan() {
+    const domain  = document.getElementById('domain-input').value.trim();
+    const limit   = parseInt(document.getElementById('limit-input').value) || 500;
+    const checked = [...document.querySelectorAll('#sources-grid input:checked')].map(c => c.value);
+
+    if (!domain) {
+      alert('Veuillez entrer un domaine cible.');
+      return;
+    }
+    if (checked.length === 0) {
+      alert('Veuillez sélectionner au moins une source.');
+      return;
+    }
+
+    const btn = document.getElementById('launch-btn');
+    btn.disabled = true;
+    btn.textContent = '⟳ SCAN EN COURS...';
+
+    document.getElementById('scan-progress').style.display = 'block';
+    document.getElementById('progress-domain').textContent = `▶ ${domain}`;
+    document.getElementById('progress-status').textContent = 'Connexion à theHarvester...';
+
+    fetch("{% url 'start_scan' %}", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain, sources: checked.join(','), limit })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        alert('Erreur : ' + data.error);
+        resetBtn();
+        return;
+      }
+      pollStatus(data.session_id);
+    })
+    .catch(err => {
+      alert('Erreur réseau : ' + err);
+      resetBtn();
+    });
+  }
+
+  function pollStatus(sessionId) {
+    const interval = setInterval(() => {
+      fetch(`/scans/${sessionId}/status/`)
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('progress-status').textContent =
+            `Statut : ${data.status} — ${data.domain}`;
+          if (data.status === 'completed' || data.status === 'failed') {
+            clearInterval(interval);
+            resetBtn();
+            if (data.status === 'completed') {
+              window.location.href = `/scans/${sessionId}/results/`;
+            } else {
+              alert('Scan échoué : ' + (data.error || 'erreur inconnue'));
+            }
+          }
+        });
+    }, 2000);
+  }
+
+  function resetBtn() {
+    const btn = document.getElementById('launch-btn');
+    btn.disabled = false;
+    btn.textContent = '▶ LANCER LE SCAN';
+    document.getElementById('scan-progress').style.display = 'none';
+  }
+</script>
+{% endblock %}
